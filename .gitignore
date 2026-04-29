@@ -25,3 +25,7 @@ venv/
 .cache/
 tmp/
 temp/
+
+# Planning drafts
+plan.md
+each-step.md
