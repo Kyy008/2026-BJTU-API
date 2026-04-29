@@ -96,8 +96,9 @@ class CommandExecutorTests {
     void repliesWithDetailedHelpByNumber() {
         assertThat(commandExecutor.execute("openid-help-detail", "帮助 1"))
                 .contains("查Offer格式")
-                .contains("公司类型")
-                .contains("岗位类型");
+                .contains("“查Offer 关键词= 城市= 公司类型= 岗位类型= 页码= 每页=“")
+                .contains("所有字段均为选填")
+                .contains("示例：”查Offer 关键词=字节 岗位类型=实习“");
         assertThat(commandExecutor.execute("openid-help-detail", "帮助 2"))
                 .contains("上传格式")
                 .contains("必填字段");

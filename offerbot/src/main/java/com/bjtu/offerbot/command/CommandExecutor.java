@@ -174,13 +174,11 @@ public class CommandExecutor {
                 || "query".equalsIgnoreCase(topic)) {
             return """
                     查Offer格式：
-                    查Offer 关键词=后端 城市=北京 公司类型=互联网 岗位类型=实习 页码=1 每页=5
+                    “查Offer 关键词= 城市= 公司类型= 岗位类型= 页码= 每页=“
 
-                    可选条件：
-                    关键词、公司、城市、公司类型、岗位类型、页码、每页
+                    所有字段均为选填；页码默认为1，每页默认5条。
 
-                    英文格式：
-                    offer query keyword=后端 city=北京 companyType=互联网 positionType=实习 page=1 size=5""";
+                    示例：”查Offer 关键词=字节 岗位类型=实习“""";
         }
         if ("找名企".equals(topic) || "famous".equalsIgnoreCase(topic)) {
             return """
