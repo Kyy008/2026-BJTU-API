@@ -137,7 +137,9 @@ public class OfferService {
                     .or()
                     .like(Offer::getSalary, keyword)
                     .or()
-                    .like(Offer::getIndustry, keyword));
+                    .like(Offer::getIndustry, keyword)
+                    .or()
+                    .like(Offer::getType, keyword));
         }
         if (StringUtils.hasText(criteria.company())) {
             wrapper.like(Offer::getCompany, criteria.company().trim());

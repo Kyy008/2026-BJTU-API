@@ -27,14 +27,29 @@ class CommandParserTests {
 
     @Test
     void parsesEnglishCommandWithChineseValues() {
-        ParsedCommand command = commandParser.parse("offer query keyword=字节 city=北京 page=2 size=3");
+        ParsedCommand command = commandParser.parse("offer query keyword=字节 city=北京 companyType=互联网 positionType=实习 page=2 size=3");
 
         assertThat(command.action()).isEqualTo(CommandAction.QUERY);
         assertThat(command.params())
                 .containsEntry("keyword", "字节")
                 .containsEntry("city", "北京")
+                .containsEntry("industry", "互联网")
+                .containsEntry("type", "实习")
                 .containsEntry("page", "2")
                 .containsEntry("size", "3");
+    }
+
+    @Test
+    void parsesQueryOfferCommandWithBusinessFieldAliases() {
+        ParsedCommand command = commandParser.parse("查Offer 关键词=后端 公司=字节跳动 城市=北京 公司类型=互联网 岗位类型=实习");
+
+        assertThat(command.action()).isEqualTo(CommandAction.QUERY);
+        assertThat(command.params())
+                .containsEntry("keyword", "后端")
+                .containsEntry("company", "字节跳动")
+                .containsEntry("city", "北京")
+                .containsEntry("industry", "互联网")
+                .containsEntry("type", "实习");
     }
 
     @Test

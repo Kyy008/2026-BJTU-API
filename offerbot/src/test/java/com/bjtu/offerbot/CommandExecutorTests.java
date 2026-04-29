@@ -37,7 +37,7 @@ class CommandExecutorTests {
         assertThat(createReply).contains("上传成功").contains("编号：");
         long id = extractId(createReply);
 
-        String queryReply = commandExecutor.execute("openid-1", "offer query keyword=字节 page=1 size=5");
+        String queryReply = commandExecutor.execute("openid-1", "查Offer 关键词=字节 公司类型=互联网 岗位类型=实习 页码=1 每页=5");
         assertThat(queryReply).contains("字节跳动").contains("后端实习");
 
         String detailReply = commandExecutor.execute("openid-1", "详情 编号=" + id);
@@ -76,7 +76,7 @@ class CommandExecutorTests {
     void appliesPermissionRules() {
         commandExecutor.execute("openid-3", "帮助");
         wxUserService.updateState("openid-3", WxUserService.STATE_SPIDER);
-        assertThat(commandExecutor.execute("openid-3", "查薪资 关键词=后端")).contains("访问被限制");
+        assertThat(commandExecutor.execute("openid-3", "查Offer 关键词=后端")).contains("访问被限制");
 
         wxUserService.updateState("openid-3", WxUserService.STATE_BANNED);
         assertThat(commandExecutor.execute("openid-3", "上传 公司=字节跳动 城市=北京 岗位=后端实习 薪资=200/天"))
@@ -88,17 +88,19 @@ class CommandExecutorTests {
         assertThat(commandExecutor.execute("openid-help", "帮助"))
                 .contains("欢迎来到 008 的 OfferBot 小站喵～")
                 .contains("想获取详情命令格式，请回复“帮助 ” + “你要查询功能前的数字”")
-                .contains("例如：帮助 2");
+                .contains("1. 查Offer")
+                .contains("例如：帮助 1");
     }
 
     @Test
     void repliesWithDetailedHelpByNumber() {
         assertThat(commandExecutor.execute("openid-help-detail", "帮助 1"))
-                .contains("查薪资格式")
-                .contains("offer query");
+                .contains("查Offer格式")
+                .contains("公司类型")
+                .contains("岗位类型");
         assertThat(commandExecutor.execute("openid-help-detail", "帮助 2"))
-                .contains("找名企格式")
-                .contains("offer famous");
+                .contains("上传格式")
+                .contains("必填字段");
         assertThat(commandExecutor.execute("openid-help-detail", "帮助 上传"))
                 .contains("上传格式")
                 .contains("必填字段");

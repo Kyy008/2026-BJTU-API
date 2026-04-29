@@ -29,9 +29,15 @@ public class CommandParser {
         FIELD_ALIASES.put("学历", "education");
         FIELD_ALIASES.put("education", "education");
         FIELD_ALIASES.put("行业", "industry");
+        FIELD_ALIASES.put("公司类型", "industry");
         FIELD_ALIASES.put("industry", "industry");
+        FIELD_ALIASES.put("companyType", "industry");
+        FIELD_ALIASES.put("company_type", "industry");
         FIELD_ALIASES.put("类型", "type");
+        FIELD_ALIASES.put("岗位类型", "type");
         FIELD_ALIASES.put("type", "type");
+        FIELD_ALIASES.put("positionType", "type");
+        FIELD_ALIASES.put("position_type", "type");
         FIELD_ALIASES.put("关键词", "keyword");
         FIELD_ALIASES.put("keyword", "keyword");
         FIELD_ALIASES.put("页码", "page");
@@ -99,6 +105,9 @@ public class CommandParser {
         String[] parts = line.split("\\s+", 2);
         String command = parts[0];
         String rest = parts.length == 2 ? parts[1] : "";
+        if ("查offer".equals(command.toLowerCase(Locale.ROOT))) {
+            return new ParsedCommand(CommandAction.QUERY, parseParams(rest), List.of(), null);
+        }
         CommandAction action = switch (command) {
             case "上传" -> CommandAction.CREATE;
             case "详情" -> CommandAction.GET;
