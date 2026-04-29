@@ -97,14 +97,11 @@ jobs:
           ssh "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}" <<'EOF'
           set -e
           cd /home/kyy008/projects/offer-bot
-          cat > .env <<'ENVEOF'
-          WECHAT_TOKEN=${{ secrets.WECHAT_TOKEN }}
-          WECHAT_APP_ID=${{ secrets.WECHAT_APP_ID }}
-          WECHAT_APP_SECRET=${{ secrets.WECHAT_APP_SECRET }}
-          DB_URL=${{ secrets.DB_URL }}
-          DB_USERNAME=${{ secrets.DB_USERNAME }}
-          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-          ENVEOF
+          if [ ! -f .env ]; then
+            echo "Missing /home/kyy008/projects/offer-bot/.env"
+            echo "Create it on the server before deploying."
+            exit 1
+          fi
           if docker compose version >/dev/null 2>&1; then
             docker compose up -d --build --remove-orphans
           else
