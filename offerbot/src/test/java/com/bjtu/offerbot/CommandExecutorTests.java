@@ -83,6 +83,14 @@ class CommandExecutorTests {
                 .contains("上传被拒绝");
     }
 
+    @Test
+    void repliesWithNumberedHelpMenu() {
+        assertThat(commandExecutor.execute("openid-help", "帮助"))
+                .contains("欢迎来到 008 的 OfferBot 小站喵～")
+                .contains("想获取详情命令格式，请回复“帮助 ” + “你要查询功能前的数字”")
+                .contains("例如：帮助 2");
+    }
+
     private long extractId(String reply) {
         Matcher matcher = ID_PATTERN.matcher(reply);
         assertThat(matcher.find()).isTrue();
