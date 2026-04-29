@@ -285,8 +285,6 @@ public class CommandExecutor {
                 .append(" 条");
         for (int i = 0; i < page.records().size(); i++) {
             builder.append("\n")
-                    .append((page.page() - 1) * page.size() + i + 1)
-                    .append(". ")
                     .append(oneLine(page.records().get(i)));
         }
         if (page.page() < page.totalPages()) {
@@ -316,8 +314,9 @@ public class CommandExecutor {
     }
 
     private String oneLine(Offer offer) {
-        return "公司：%s｜城市：%s｜岗位：%s｜薪资：%s ｜ 学历要求：%s ｜ 公司类型：%s ｜ 岗位类型：%s"
+        return "编号：%d ｜ 公司：%s｜城市：%s｜岗位：%s｜薪资：%s ｜ 学历要求：%s ｜ 公司类型：%s ｜ 岗位类型：%s"
                 .formatted(
+                        offer.getId(),
                         offer.getCompany(),
                         offer.getCity(),
                         offer.getPosition(),
