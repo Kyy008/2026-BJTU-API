@@ -1,9 +1,34 @@
 services:
+  mysql:
+    image: mysql:8.4
+    container_name: offerbot-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
+      MYSQL_DATABASE: "${MYSQL_DATABASE:-offer_bot}"
+      MYSQL_USER: "${MYSQL_USER:-offer_bot}"
+      MYSQL_PASSWORD: "${MYSQL_PASSWORD}"
+      TZ: Asia/Shanghai
+    command:
+      - "--character-set-server=utf8mb4"
+      - "--collation-server=utf8mb4_unicode_ci"
+    volumes:
+      - offerbot-mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u$${MYSQL_USER} -p$${MYSQL_PASSWORD} --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
   offerbot:
     build:
       context: .
     container_name: offerbot
     restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
     ports:
       - "127.0.0.1:8081:8081"
     environment:
@@ -11,6 +36,10 @@ services:
       WECHAT_TOKEN: "${WECHAT_TOKEN}"
       WECHAT_APP_ID: "${WECHAT_APP_ID:-}"
       WECHAT_APP_SECRET: "${WECHAT_APP_SECRET:-}"
-      DB_URL: "${DB_URL:-jdbc:mysql://localhost:3306/offer_bot?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai}"
-      DB_USERNAME: "${DB_USERNAME:-root}"
-      DB_PASSWORD: "${DB_PASSWORD:-}"
+      DB_URL: "${DB_URL:-jdbc:mysql://mysql:3306/offer_bot?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false}"
+      DB_USERNAME: "${DB_USERNAME:-offer_bot}"
+      DB_PASSWORD: "${DB_PASSWORD:-${MYSQL_PASSWORD}}"
+      FLYWAY_ENABLED: "${FLYWAY_ENABLED:-true}"
+
+volumes:
+  offerbot-mysql-data:
