@@ -102,10 +102,24 @@ class CommandExecutorTests {
                 .contains("示例：”查Offer 关键词=字节 岗位类型=实习“");
         assertThat(commandExecutor.execute("openid-help-detail", "帮助 2"))
                 .contains("上传格式")
-                .contains("必填字段");
+                .contains("“上传 公司= 城市= 岗位= 薪资= 学历= 公司类型= 岗位类型=“")
+                .contains("公司、城市、岗位、薪资为必填")
+                .contains("示例：”上传 公司=字节跳动 城市=北京 岗位=后端开发实习生 薪资=300/天 岗位类型=实习“");
+        assertThat(commandExecutor.execute("openid-help-detail", "帮助 3"))
+                .contains("详情格式")
+                .contains("“详情 编号=“")
+                .contains("示例：”详情 编号=1“");
+        assertThat(commandExecutor.execute("openid-help-detail", "帮助 4"))
+                .contains("更新格式")
+                .contains("“更新 编号= 公司= 城市= 岗位= 薪资= 学历= 公司类型= 岗位类型=“")
+                .contains("示例：”更新 编号=1 薪资=350/天 岗位类型=实习“");
+        assertThat(commandExecutor.execute("openid-help-detail", "帮助 5"))
+                .contains("删除格式")
+                .contains("“删除 编号=“")
+                .contains("示例：”删除 编号=1“");
         assertThat(commandExecutor.execute("openid-help-detail", "帮助 上传"))
                 .contains("上传格式")
-                .contains("必填字段")
+                .contains("公司、城市、岗位、薪资为必填")
                 .doesNotContain("英文")
                 .doesNotContain("offer create");
     }
