@@ -4,12 +4,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.bjtu.offerbot.domain.Offer;
+import com.bjtu.offerbot.mapper.OfferMapper;
 import com.bjtu.offerbot.service.BusinessException;
 import com.bjtu.offerbot.service.OfferService;
 import com.bjtu.offerbot.service.dto.BatchCreateResult;
 import com.bjtu.offerbot.service.dto.OfferDraft;
 import com.bjtu.offerbot.service.dto.OfferSearchCriteria;
 import com.bjtu.offerbot.service.dto.PagedResult;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -23,6 +25,9 @@ class OfferServiceTests {
 
     @Autowired
     private OfferService offerService;
+
+    @Autowired
+    private OfferMapper offerMapper;
 
     @Test
     void createsGetsUpdatesReplacesAndDeletesOffer() {
@@ -65,6 +70,29 @@ class OfferServiceTests {
         PagedResult<Offer> famous = offerService.listOffers(
                 new OfferSearchCriteria(null, null, "北京", "后端", null, null, true), 1, 5);
         assertThat(famous.records()).extracting(Offer::getCompany).containsExactlyInAnyOrder("字节跳动", "美团");
+    }
+
+    @Test
+    void typeSearchMatchesChineseSeedRowsAndNormalizedRows() {
+        offerService.createOffer(new OfferDraft("字节跳动", "北京", "后端实习", "200/天", "本科", "互联网", "实习"), "u1");
+
+        Offer rawSeed = new Offer();
+        rawSeed.setCompany("字节跳动");
+        rawSeed.setCity("北京");
+        rawSeed.setPosition("后端开发实习生");
+        rawSeed.setSalary("300/天");
+        rawSeed.setEducation("本科");
+        rawSeed.setIndustry("互联网");
+        rawSeed.setType("实习");
+        rawSeed.setSourceOpenid("seed:test");
+        rawSeed.setCreatedAt(LocalDateTime.now());
+        rawSeed.setUpdatedAt(LocalDateTime.now());
+        offerMapper.insert(rawSeed);
+
+        PagedResult<Offer> result = offerService.listOffers(
+                new OfferSearchCriteria("字节", null, null, null, null, "实习", false), 1, 5);
+        assertThat(result.records()).extracting(Offer::getPosition)
+                .containsExactlyInAnyOrder("后端实习", "后端开发实习生");
     }
 
     @Test

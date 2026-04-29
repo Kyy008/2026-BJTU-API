@@ -154,7 +154,9 @@ public class OfferService {
             wrapper.like(Offer::getIndustry, criteria.industry().trim());
         }
         if (StringUtils.hasText(criteria.type())) {
-            wrapper.eq(Offer::getType, normalizeOptional(criteria.type()));
+            String rawType = criteria.type().trim();
+            String normalizedType = normalizeOptional(rawType);
+            wrapper.and(w -> w.eq(Offer::getType, normalizedType).or().eq(Offer::getType, rawType));
         }
         if (criteria.famousOnly()) {
             wrapper.in(Offer::getCompany, FAMOUS_COMPANIES);
