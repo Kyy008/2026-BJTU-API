@@ -21,6 +21,9 @@ __pycache__/
 .venv/
 venv/
 
+# Java/Maven build output
+target/
+
 # Temporary files
 .cache/
 tmp/
