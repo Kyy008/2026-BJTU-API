@@ -30,7 +30,7 @@ class CommandExecutorTests {
     private CommandLogMapper commandLogMapper;
 
     @Test
-    void executesCrudCommandsWithChineseAndEnglishForms() {
+    void executesCrudCommandsWithChineseForms() {
         String createReply = commandExecutor.execute(
                 "openid-1",
                 "上传 公司=字节跳动 城市=北京 岗位=后端实习 薪资=200/天 学历=本科 行业=互联网 类型=实习");
@@ -48,7 +48,7 @@ class CommandExecutorTests {
 
         String replaceReply = commandExecutor.execute(
                 "openid-1",
-                "offer replace id=" + id + " company=腾讯 city=深圳 position=Java后端 salary=20k*15 education=本科 industry=互联网 type=校招");
+                "替换 编号=" + id + " 公司=腾讯 城市=深圳 岗位=Java后端 薪资=20k*15 学历=本科 公司类型=互联网 岗位类型=校招");
         assertThat(replaceReply).contains("替换成功").contains("腾讯");
 
         String deleteReply = commandExecutor.execute("openid-1", "删除 编号=" + id);
@@ -104,7 +104,15 @@ class CommandExecutorTests {
                 .contains("必填字段");
         assertThat(commandExecutor.execute("openid-help-detail", "帮助 上传"))
                 .contains("上传格式")
-                .contains("必填字段");
+                .contains("必填字段")
+                .doesNotContain("英文")
+                .doesNotContain("offer create");
+    }
+
+    @Test
+    void rejectsEnglishCommandsAndFields() {
+        assertThat(commandExecutor.execute("openid-english", "offer query keyword=字节")).contains("暂时看不懂");
+        assertThat(commandExecutor.execute("openid-english", "查Offer keyword=字节")).contains("无法识别字段");
     }
 
     private long extractId(String reply) {

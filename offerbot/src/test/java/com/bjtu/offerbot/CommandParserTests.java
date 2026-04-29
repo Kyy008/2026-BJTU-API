@@ -26,17 +26,17 @@ class CommandParserTests {
     }
 
     @Test
-    void parsesEnglishCommandWithChineseValues() {
-        ParsedCommand command = commandParser.parse("offer query keyword=字节 city=北京 companyType=互联网 positionType=实习 page=2 size=3");
+    void rejectsEnglishCommand() {
+        assertThatThrownBy(() -> commandParser.parse("offer query keyword=字节 city=北京"))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("暂时看不懂");
+    }
 
-        assertThat(command.action()).isEqualTo(CommandAction.QUERY);
-        assertThat(command.params())
-                .containsEntry("keyword", "字节")
-                .containsEntry("city", "北京")
-                .containsEntry("industry", "互联网")
-                .containsEntry("type", "实习")
-                .containsEntry("page", "2")
-                .containsEntry("size", "3");
+    @Test
+    void rejectsEnglishFieldNames() {
+        assertThatThrownBy(() -> commandParser.parse("查Offer keyword=字节 city=北京"))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("无法识别字段");
     }
 
     @Test

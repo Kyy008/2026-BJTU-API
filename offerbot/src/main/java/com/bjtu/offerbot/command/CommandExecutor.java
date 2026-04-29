@@ -162,7 +162,7 @@ public class CommandExecutor {
         try {
             return Integer.parseInt(value);
         } catch (NumberFormatException e) {
-            throw new BusinessException(("page".equals(key) ? "页码/page" : "每页/size") + " 必须是大于等于 1 的整数。");
+            throw new BusinessException(("page".equals(key) ? "页码" : "每页") + "必须是大于等于 1 的整数。");
         }
     }
 
@@ -170,8 +170,7 @@ public class CommandExecutor {
         if ("1".equals(topic)
                 || "查Offer".equalsIgnoreCase(topic)
                 || "查薪资".equals(topic)
-                || "查询".equals(topic)
-                || "query".equalsIgnoreCase(topic)) {
+                || "查询".equals(topic)) {
             return """
                     查Offer格式：
                     “查Offer 关键词= 城市= 公司类型= 岗位类型= 页码= 每页=“
@@ -187,7 +186,7 @@ public class CommandExecutor {
                     推荐格式：
                     查Offer 关键词=后端 城市=北京 公司类型=互联网 岗位类型=实习""";
         }
-        if ("2".equals(topic) || "上传".equals(topic) || "create".equalsIgnoreCase(topic)) {
+        if ("2".equals(topic) || "上传".equals(topic)) {
             return """
                     上传格式：
                     上传 公司=字节跳动 城市=北京 岗位=后端实习 薪资=200/天 学历=本科 公司类型=互联网 岗位类型=实习
@@ -196,37 +195,25 @@ public class CommandExecutor {
                     公司、城市、岗位、薪资
 
                     可选字段：
-                    学历、公司类型、岗位类型
-
-                    英文 key：
-                    offer create company=字节跳动 city=北京 position=后端实习 salary=200/天 companyType=互联网 positionType=实习""";
+                    学历、公司类型、岗位类型""";
         }
-        if ("3".equals(topic) || "详情".equals(topic) || "get".equalsIgnoreCase(topic)) {
+        if ("3".equals(topic) || "详情".equals(topic)) {
             return """
                     详情格式：
-                    详情 编号=1
-
-                    英文格式：
-                    offer get id=1""";
+                    详情 编号=1""";
         }
-        if ("4".equals(topic) || "更新".equals(topic) || "update".equalsIgnoreCase(topic)) {
+        if ("4".equals(topic) || "更新".equals(topic)) {
             return """
                     更新格式：
                     更新 编号=1 薪资=250/天 城市=北京 岗位类型=实习
 
                     说明：
-                    编号必填，其他字段按需填写，只修改你写出的字段。
-
-                    英文格式：
-                    offer update id=1 salary=250/天 city=北京 positionType=实习""";
+                    编号必填，其他字段按需填写，只修改你写出的字段。""";
         }
-        if ("5".equals(topic) || "删除".equals(topic) || "delete".equalsIgnoreCase(topic)) {
+        if ("5".equals(topic) || "删除".equals(topic)) {
             return """
                     删除格式：
-                    删除 编号=1
-
-                    英文格式：
-                    offer delete id=1""";
+                    删除 编号=1""";
         }
         return """
                 欢迎来到 008 的 OfferBot 小站喵～

@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -17,33 +16,18 @@ public class CommandParser {
 
     static {
         FIELD_ALIASES.put("编号", "id");
-        FIELD_ALIASES.put("id", "id");
         FIELD_ALIASES.put("公司", "company");
-        FIELD_ALIASES.put("company", "company");
         FIELD_ALIASES.put("城市", "city");
-        FIELD_ALIASES.put("city", "city");
         FIELD_ALIASES.put("岗位", "position");
-        FIELD_ALIASES.put("position", "position");
         FIELD_ALIASES.put("薪资", "salary");
-        FIELD_ALIASES.put("salary", "salary");
         FIELD_ALIASES.put("学历", "education");
-        FIELD_ALIASES.put("education", "education");
         FIELD_ALIASES.put("行业", "industry");
         FIELD_ALIASES.put("公司类型", "industry");
-        FIELD_ALIASES.put("industry", "industry");
-        FIELD_ALIASES.put("companyType", "industry");
-        FIELD_ALIASES.put("company_type", "industry");
         FIELD_ALIASES.put("类型", "type");
         FIELD_ALIASES.put("岗位类型", "type");
-        FIELD_ALIASES.put("type", "type");
-        FIELD_ALIASES.put("positionType", "type");
-        FIELD_ALIASES.put("position_type", "type");
         FIELD_ALIASES.put("关键词", "keyword");
-        FIELD_ALIASES.put("keyword", "keyword");
         FIELD_ALIASES.put("页码", "page");
-        FIELD_ALIASES.put("page", "page");
         FIELD_ALIASES.put("每页", "size");
-        FIELD_ALIASES.put("size", "size");
     }
 
     public ParsedCommand parse(String rawCommand) {
@@ -58,54 +42,25 @@ public class CommandParser {
                 .findFirst()
                 .orElseThrow(() -> new BusinessException("暂时看不懂这条命令。\n发送“帮助”查看可用命令。"));
 
-        if ("批量上传".equals(firstLine) || "offer batch create".equalsIgnoreCase(firstLine)) {
+        if ("批量上传".equals(firstLine)) {
             return new ParsedCommand(CommandAction.BATCH_CREATE, Map.of(), batchRows(lines, firstLine), null);
         }
 
-        if (firstLine.equals("帮助") || firstLine.toLowerCase(Locale.ROOT).equals("help")) {
+        if (firstLine.equals("帮助")) {
             return new ParsedCommand(CommandAction.HELP, Map.of(), List.of(), null);
         }
         if (firstLine.startsWith("帮助 ")) {
             return new ParsedCommand(CommandAction.HELP, Map.of(), List.of(), firstLine.substring(3).trim());
         }
-        if (firstLine.toLowerCase(Locale.ROOT).startsWith("help ")) {
-            return new ParsedCommand(CommandAction.HELP, Map.of(), List.of(), firstLine.substring(5).trim());
-        }
-
-        if (firstLine.toLowerCase(Locale.ROOT).startsWith("offer ")) {
-            return parseEnglishOffer(firstLine);
-        }
 
         return parseChinese(firstLine);
-    }
-
-    private ParsedCommand parseEnglishOffer(String line) {
-        String[] parts = line.split("\\s+", 3);
-        if (parts.length < 2) {
-            throw unknownCommand();
-        }
-
-        String actionName = parts[1].toLowerCase(Locale.ROOT);
-        String rest = parts.length == 3 ? parts[2] : "";
-        CommandAction action = switch (actionName) {
-            case "create" -> CommandAction.CREATE;
-            case "get" -> CommandAction.GET;
-            case "list" -> CommandAction.LIST;
-            case "query" -> CommandAction.QUERY;
-            case "famous" -> CommandAction.FAMOUS_QUERY;
-            case "update" -> CommandAction.UPDATE;
-            case "replace" -> CommandAction.REPLACE;
-            case "delete" -> CommandAction.DELETE;
-            default -> throw unknownCommand();
-        };
-        return new ParsedCommand(action, parseParams(rest), List.of(), null);
     }
 
     private ParsedCommand parseChinese(String line) {
         String[] parts = line.split("\\s+", 2);
         String command = parts[0];
         String rest = parts.length == 2 ? parts[1] : "";
-        if ("查offer".equals(command.toLowerCase(Locale.ROOT))) {
+        if ("查Offer".equals(command) || "查offer".equals(command)) {
             return new ParsedCommand(CommandAction.QUERY, parseParams(rest), List.of(), null);
         }
         CommandAction action = switch (command) {
@@ -160,6 +115,6 @@ public class CommandParser {
     }
 
     private BusinessException unknownCommand() {
-        return new BusinessException("暂时看不懂这条命令。\n发送“帮助”查看可用命令。\nYou can also send \"help\" for English examples.");
+        return new BusinessException("暂时看不懂这条命令。\n发送“帮助”查看可用命令。");
     }
 }
