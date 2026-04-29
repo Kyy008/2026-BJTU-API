@@ -1,0 +1,99 @@
+name: Offerbot CI/CD
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "offerbot/**"
+      - ".github/workflows/offerbot-ci-cd.yml"
+  pull_request:
+    paths:
+      - "offerbot/**"
+      - ".github/workflows/offerbot-ci-cd.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: offerbot-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build and test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: offerbot
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      - name: Test
+        run: mvn -B test
+
+      - name: Package
+        run: mvn -B package -DskipTests
+
+      - name: Upload jar artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: offerbot-jar
+          path: offerbot/target/offerbot-0.0.1-SNAPSHOT.jar
+          if-no-files-found: error
+
+  deploy:
+    name: Deploy to server
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    environment: production
+
+    steps:
+      - name: Download jar artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: offerbot-jar
+          path: dist
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "${{ secrets.SERVER_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Upload jar
+        run: |
+          ssh "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}" 'mkdir -p /opt/offerbot'
+          scp dist/offerbot-0.0.1-SNAPSHOT.jar "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/opt/offerbot/offerbot.jar"
+
+      - name: Restart offerbot
+        run: |
+          ssh "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}" <<'EOF'
+          set -e
+          mkdir -p /opt/offerbot/logs
+          if [ -f /opt/offerbot/offerbot.pid ]; then
+            old_pid="$(cat /opt/offerbot/offerbot.pid)"
+            if kill -0 "$old_pid" 2>/dev/null; then
+              kill "$old_pid"
+              sleep 3
+            fi
+          fi
+          cd /opt/offerbot
+          nohup env \
+            SERVER_PORT="${SERVER_PORT:-8081}" \
+            WECHAT_TOKEN="${{ secrets.WECHAT_TOKEN }}" \
+            WECHAT_APP_ID="${{ secrets.WECHAT_APP_ID }}" \
+            WECHAT_APP_SECRET="${{ secrets.WECHAT_APP_SECRET }}" \
+            java -jar /opt/offerbot/offerbot.jar \
+            > /opt/offerbot/logs/offerbot.log 2>&1 &
+          echo "$!" > /opt/offerbot/offerbot.pid
+          EOF
