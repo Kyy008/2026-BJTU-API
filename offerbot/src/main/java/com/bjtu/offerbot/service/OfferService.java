@@ -60,7 +60,7 @@ public class OfferService {
         int normalizedPage = normalizePage(page);
         int normalizedSize = normalizeSize(size);
         LambdaQueryWrapper<Offer> wrapper = buildQuery(criteria == null ? OfferSearchCriteria.empty() : criteria);
-        wrapper.orderByDesc(Offer::getId);
+        wrapper.orderByAsc(Offer::getId);
 
         List<Offer> allRecords = offerMapper.selectList(wrapper);
         int total = allRecords.size();

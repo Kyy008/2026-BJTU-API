@@ -62,6 +62,7 @@ class OfferServiceTests {
         assertThat(firstPage.total()).isEqualTo(3);
         assertThat(firstPage.records()).hasSize(2);
         assertThat(firstPage.totalPages()).isEqualTo(2);
+        assertThat(firstPage.records()).extracting(Offer::getCompany).containsExactly("字节跳动", "腾讯");
 
         PagedResult<Offer> keyword = offerService.listOffers(
                 new OfferSearchCriteria("字节", null, null, null, null, null, false), 1, 5);
