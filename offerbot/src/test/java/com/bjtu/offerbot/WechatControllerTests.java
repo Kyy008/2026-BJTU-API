@@ -65,7 +65,7 @@ class WechatControllerTests {
                   <FromUserName><![CDATA[user_openid]]></FromUserName>
                   <CreateTime>1714380000</CreateTime>
                   <MsgType><![CDATA[text]]></MsgType>
-                  <Content><![CDATA[你好]]></Content>
+                  <Content><![CDATA[帮助]]></Content>
                   <MsgId>1</MsgId>
                 </xml>""";
 

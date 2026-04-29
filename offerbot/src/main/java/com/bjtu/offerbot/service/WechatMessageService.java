@@ -1,16 +1,22 @@
 package com.bjtu.offerbot.service;
 
+import com.bjtu.offerbot.command.CommandExecutor;
 import java.io.StringReader;
 import java.time.Instant;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 
 @Service
 public class WechatMessageService {
+
+    private final CommandExecutor commandExecutor;
+
+    public WechatMessageService(CommandExecutor commandExecutor) {
+        this.commandExecutor = commandExecutor;
+    }
 
     public String reply(String requestBody) {
         WechatInboundMessage message = parse(requestBody);
@@ -30,34 +36,7 @@ public class WechatMessageService {
             return "当前先支持文字消息。发送“帮助”查看可用指令。";
         }
 
-        String content = message.content().trim();
-        if (!StringUtils.hasText(content)) {
-            return "我收到了一条空消息。发送“帮助”查看可用指令。";
-        }
-
-        if (isHelpCommand(content)) {
-            return """
-                    OfferBot 已连接。
-                    发送“你好”测试连通。
-                    发送“需求”查看当前作业方向。
-                    后续会接入岗位、公司和投递记录查询。""";
-        }
-
-        if ("你好".equals(content) || "hi".equalsIgnoreCase(content) || "hello".equalsIgnoreCase(content)) {
-            return "你好，我是 OfferBot。公众号消息链路已经打通，发送“帮助”查看可用指令。";
-        }
-
-        if ("需求".equals(content) || "作业".equals(content)) {
-            return "当前阶段先完成公众号接入、服务器验证和基础消息回复；下一阶段会根据作业需求扩展问答和数据查询能力。";
-        }
-
-        return "收到：" + content + "\n发送“帮助”查看可用指令。";
-    }
-
-    private boolean isHelpCommand(String content) {
-        return "帮助".equals(content)
-                || "help".equalsIgnoreCase(content)
-                || "menu".equalsIgnoreCase(content);
+        return commandExecutor.execute(message.fromUserName(), message.content());
     }
 
     private WechatInboundMessage parse(String requestBody) {

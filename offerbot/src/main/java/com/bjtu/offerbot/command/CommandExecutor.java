@@ -1,0 +1,297 @@
+package com.bjtu.offerbot.command;
+
+import com.bjtu.offerbot.domain.Offer;
+import com.bjtu.offerbot.domain.WxUser;
+import com.bjtu.offerbot.service.BusinessException;
+import com.bjtu.offerbot.service.CommandLogService;
+import com.bjtu.offerbot.service.OfferService;
+import com.bjtu.offerbot.service.WxUserService;
+import com.bjtu.offerbot.service.dto.BatchCreateResult;
+import com.bjtu.offerbot.service.dto.OfferDraft;
+import com.bjtu.offerbot.service.dto.OfferSearchCriteria;
+import com.bjtu.offerbot.service.dto.PagedResult;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
+
+@Component
+public class CommandExecutor {
+
+    private final CommandParser commandParser;
+    private final OfferService offerService;
+    private final WxUserService wxUserService;
+    private final CommandLogService commandLogService;
+
+    public CommandExecutor(
+            CommandParser commandParser,
+            OfferService offerService,
+            WxUserService wxUserService,
+            CommandLogService commandLogService) {
+        this.commandParser = commandParser;
+        this.offerService = offerService;
+        this.wxUserService = wxUserService;
+        this.commandLogService = commandLogService;
+    }
+
+    public String execute(String openid, String rawCommand) {
+        ParsedCommand parsedCommand = null;
+        String result = null;
+        String error = null;
+        try {
+            WxUser user = wxUserService.recordRequest(openid);
+            parsedCommand = commandParser.parse(rawCommand);
+            checkPermission(user, parsedCommand.action());
+            result = executeParsed(openid, parsedCommand);
+            return result;
+        } catch (BusinessException e) {
+            error = e.getMessage();
+            return error;
+        } catch (RuntimeException e) {
+            error = "系统暂时无法处理这条命令，请稍后再试。";
+            return error;
+        } finally {
+            commandLogService.log(
+                    openid,
+                    rawCommand,
+                    parsedCommand == null ? null : parsedCommand.action().name(),
+                    error == null ? "SUCCESS" : "FAILED",
+                    result,
+                    error);
+        }
+    }
+
+    private String executeParsed(String openid, ParsedCommand command) {
+        return switch (command.action()) {
+            case HELP -> help(command.helpTopic());
+            case CREATE -> formatCreated(offerService.createOffer(toDraft(command.params()), openid));
+            case GET -> formatOffer(offerService.getOffer(parseRequiredLong(command.params(), "id", "编号"))
+                    .orElseThrow(() -> new BusinessException("没有找到编号=" + command.params().get("id") + " 的记录。")));
+            case LIST -> formatPage(offerService.listOffers(OfferSearchCriteria.empty(), parseInt(command.params(), "page"), parseInt(command.params(), "size")), "列表");
+            case QUERY -> formatPage(offerService.listOffers(toCriteria(command.params(), false), parseInt(command.params(), "page"), parseInt(command.params(), "size")), "查薪资");
+            case FAMOUS_QUERY -> formatPage(offerService.listOffers(toCriteria(command.params(), true), parseInt(command.params(), "page"), parseInt(command.params(), "size")), "找名企");
+            case UPDATE -> formatUpdated(offerService.updateOffer(parseRequiredLong(command.params(), "id", "编号"), updatePatch(command.params())));
+            case REPLACE -> formatReplaced(offerService.replaceOffer(parseRequiredLong(command.params(), "id", "编号"), toDraft(command.params())));
+            case DELETE -> formatDeleted(parseAndDelete(command.params()));
+            case BATCH_CREATE -> formatBatch(offerService.batchCreateOffers(command.batchRows(), openid));
+        };
+    }
+
+    private void checkPermission(WxUser user, CommandAction action) {
+        if (WxUserService.STATE_SPIDER.equals(user.getState()) && isQueryAction(action)) {
+            throw new BusinessException("访问被限制：检测到短时间内请求过于频繁。\n当前不能查询 Offer 信息，请稍后联系管理员处理。");
+        }
+        if (WxUserService.STATE_BANNED.equals(user.getState()) && isMutationAction(action)) {
+            throw new BusinessException("上传被拒绝：当前账号没有上传或修改权限。");
+        }
+    }
+
+    private boolean isQueryAction(CommandAction action) {
+        return action == CommandAction.GET
+                || action == CommandAction.LIST
+                || action == CommandAction.QUERY
+                || action == CommandAction.FAMOUS_QUERY;
+    }
+
+    private boolean isMutationAction(CommandAction action) {
+        return action == CommandAction.CREATE
+                || action == CommandAction.UPDATE
+                || action == CommandAction.REPLACE
+                || action == CommandAction.DELETE
+                || action == CommandAction.BATCH_CREATE;
+    }
+
+    private OfferDraft toDraft(Map<String, String> params) {
+        return new OfferDraft(
+                params.get("company"),
+                params.get("city"),
+                params.get("position"),
+                params.get("salary"),
+                params.get("education"),
+                params.get("industry"),
+                params.get("type"));
+    }
+
+    private OfferSearchCriteria toCriteria(Map<String, String> params, boolean famousOnly) {
+        return new OfferSearchCriteria(
+                params.get("keyword"),
+                params.get("company"),
+                params.get("city"),
+                params.get("position"),
+                params.get("industry"),
+                params.get("type"),
+                famousOnly);
+    }
+
+    private Map<String, String> updatePatch(Map<String, String> params) {
+        Map<String, String> patch = new LinkedHashMap<>(params);
+        patch.remove("id");
+        patch.remove("keyword");
+        patch.remove("page");
+        patch.remove("size");
+        return patch;
+    }
+
+    private Long parseAndDelete(Map<String, String> params) {
+        Long id = parseRequiredLong(params, "id", "编号");
+        offerService.deleteOffer(id);
+        return id;
+    }
+
+    private Long parseRequiredLong(Map<String, String> params, String key, String label) {
+        String value = params.get(key);
+        if (!StringUtils.hasText(value)) {
+            throw new BusinessException("缺少必填字段：" + label);
+        }
+        try {
+            long parsed = Long.parseLong(value);
+            if (parsed <= 0) {
+                throw new NumberFormatException("non-positive");
+            }
+            return parsed;
+        } catch (NumberFormatException e) {
+            throw new BusinessException(label + "必须是大于 0 的整数。");
+        }
+    }
+
+    private Integer parseInt(Map<String, String> params, String key) {
+        String value = params.get(key);
+        if (!StringUtils.hasText(value)) {
+            return null;
+        }
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException e) {
+            throw new BusinessException(("page".equals(key) ? "页码/page" : "每页/size") + " 必须是大于等于 1 的整数。");
+        }
+    }
+
+    private String help(String topic) {
+        if ("上传".equals(topic) || "create".equalsIgnoreCase(topic)) {
+            return """
+                    上传格式：
+                    上传 公司=字节跳动 城市=北京 岗位=后端实习 薪资=200/天 学历=本科 行业=互联网 类型=实习
+
+                    英文 key：
+                    offer create company=字节跳动 city=北京 position=后端实习 salary=200/天""";
+        }
+        if ("查询".equals(topic) || "query".equalsIgnoreCase(topic)) {
+            return """
+                    查询格式：
+                    查薪资 关键词=字节 页码=1 每页=5
+                    找名企 城市=北京 岗位=后端
+                    列表 页码=1 每页=5""";
+        }
+        return """
+                OfferBot 命令手册
+                1. 查薪资 关键词=字节
+                2. 找名企 城市=北京 岗位=后端
+                3. 上传 公司=字节跳动 城市=北京 岗位=后端实习 薪资=200/天
+                4. 详情 编号=1
+                5. 更新 编号=1 薪资=250/天
+                6. 删除 编号=1
+                发送“帮助 上传”查看完整上传格式。""";
+    }
+
+    private String formatCreated(Offer offer) {
+        return "上传成功\n编号：" + offer.getId() + "\n" + oneLine(offer) + "\n查看详情：详情 编号=" + offer.getId();
+    }
+
+    private String formatUpdated(Offer offer) {
+        return "更新成功\n编号：" + offer.getId() + "\n查看详情：详情 编号=" + offer.getId();
+    }
+
+    private String formatReplaced(Offer offer) {
+        return "替换成功\n编号：" + offer.getId() + "\n" + oneLine(offer);
+    }
+
+    private String formatDeleted(Long id) {
+        return "删除成功\n编号：" + id;
+    }
+
+    private String formatOffer(Offer offer) {
+        return """
+                编号：%d
+                公司：%s
+                城市：%s
+                岗位：%s
+                薪资：%s
+                学历：%s
+                行业：%s
+                类型：%s"""
+                .formatted(
+                        offer.getId(),
+                        offer.getCompany(),
+                        offer.getCity(),
+                        offer.getPosition(),
+                        offer.getSalary(),
+                        display(offer.getEducation()),
+                        display(offer.getIndustry()),
+                        displayType(offer.getType()));
+    }
+
+    private String formatPage(PagedResult<Offer> page, String commandName) {
+        if (page.records().isEmpty()) {
+            return "没有找到匹配结果。\n你可以尝试放宽条件，例如：查薪资 关键词=后端";
+        }
+
+        StringBuilder builder = new StringBuilder();
+        builder.append("第 ")
+                .append(page.page())
+                .append("/")
+                .append(page.totalPages())
+                .append(" 页，共 ")
+                .append(page.total())
+                .append(" 条");
+        for (int i = 0; i < page.records().size(); i++) {
+            builder.append("\n")
+                    .append((page.page() - 1) * page.size() + i + 1)
+                    .append(". ")
+                    .append(oneLine(page.records().get(i)));
+        }
+        if (page.page() < page.totalPages()) {
+            builder.append("\n\n下一页：")
+                    .append(commandName)
+                    .append(" 页码=")
+                    .append(page.page() + 1)
+                    .append(" 每页=")
+                    .append(page.size());
+        }
+        return builder.toString();
+    }
+
+    private String formatBatch(BatchCreateResult result) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("批量上传完成\n成功：")
+                .append(result.successCount())
+                .append(" 条\n失败：")
+                .append(result.failureCount())
+                .append(" 条");
+        if (!result.failures().isEmpty()) {
+            builder.append("\n\n").append(String.join("\n", result.failures()));
+        } else {
+            builder.append("\n查看列表：列表 页码=1 每页=5");
+        }
+        return builder.toString();
+    }
+
+    private String oneLine(Offer offer) {
+        return offer.getCompany() + "｜" + offer.getCity() + "｜" + offer.getPosition() + "｜" + offer.getSalary();
+    }
+
+    private String display(String value) {
+        return StringUtils.hasText(value) ? value : "未知";
+    }
+
+    private String displayType(String value) {
+        if (!StringUtils.hasText(value)) {
+            return "未知";
+        }
+        return switch (value) {
+            case "internship" -> "实习";
+            case "campus" -> "校招";
+            case "fulltime" -> "社招";
+            default -> value;
+        };
+    }
+}

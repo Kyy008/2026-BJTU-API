@@ -10,7 +10,8 @@ spring:
     password: ${DB_PASSWORD:}
     driver-class-name: com.mysql.cj.jdbc.Driver
   flyway:
-    enabled: false
+    enabled: ${FLYWAY_ENABLED:false}
+    locations: classpath:db/migration
 
 wechat:
   token: ${WECHAT_TOKEN:}
