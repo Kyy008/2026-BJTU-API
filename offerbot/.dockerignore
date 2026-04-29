@@ -1,0 +1,6 @@
+target/
+.idea/
+*.iml
+*.log
+plan.md
+each-step.md

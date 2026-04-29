@@ -49,6 +49,16 @@ jobs:
           path: offerbot/target/offerbot-0.0.1-SNAPSHOT.jar
           if-no-files-found: error
 
+      - name: Upload deployment files
+        uses: actions/upload-artifact@v4
+        with:
+          name: offerbot-deploy-files
+          path: |
+            offerbot/Dockerfile
+            offerbot/docker-compose.yml
+            offerbot/.dockerignore
+          if-no-files-found: error
+
   deploy:
     name: Deploy to server
     runs-on: ubuntu-latest
@@ -63,6 +73,12 @@ jobs:
           name: offerbot-jar
           path: dist
 
+      - name: Download deployment files
+        uses: actions/download-artifact@v4
+        with:
+          name: offerbot-deploy-files
+          path: dist/deploy
+
       - name: Configure SSH
         run: |
           mkdir -p ~/.ssh
@@ -70,30 +86,28 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H "${{ secrets.SERVER_HOST }}" >> ~/.ssh/known_hosts
 
-      - name: Upload jar
+      - name: Upload deployment bundle
         run: |
           ssh "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}" 'mkdir -p /opt/offerbot'
           scp dist/offerbot-0.0.1-SNAPSHOT.jar "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/opt/offerbot/offerbot.jar"
+          scp dist/deploy/Dockerfile dist/deploy/docker-compose.yml dist/deploy/.dockerignore "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/opt/offerbot/"
 
-      - name: Restart offerbot
+      - name: Deploy offerbot container
         run: |
           ssh "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}" <<'EOF'
           set -e
-          mkdir -p /opt/offerbot/logs
-          if [ -f /opt/offerbot/offerbot.pid ]; then
-            old_pid="$(cat /opt/offerbot/offerbot.pid)"
-            if kill -0 "$old_pid" 2>/dev/null; then
-              kill "$old_pid"
-              sleep 3
-            fi
-          fi
           cd /opt/offerbot
-          nohup env \
-            SERVER_PORT="${SERVER_PORT:-8081}" \
-            WECHAT_TOKEN="${{ secrets.WECHAT_TOKEN }}" \
-            WECHAT_APP_ID="${{ secrets.WECHAT_APP_ID }}" \
-            WECHAT_APP_SECRET="${{ secrets.WECHAT_APP_SECRET }}" \
-            java -jar /opt/offerbot/offerbot.jar \
-            > /opt/offerbot/logs/offerbot.log 2>&1 &
-          echo "$!" > /opt/offerbot/offerbot.pid
+          cat > .env <<'ENVEOF'
+          WECHAT_TOKEN=${{ secrets.WECHAT_TOKEN }}
+          WECHAT_APP_ID=${{ secrets.WECHAT_APP_ID }}
+          WECHAT_APP_SECRET=${{ secrets.WECHAT_APP_SECRET }}
+          DB_URL=${{ secrets.DB_URL }}
+          DB_USERNAME=${{ secrets.DB_USERNAME }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          ENVEOF
+          if docker compose version >/dev/null 2>&1; then
+            docker compose up -d --build --remove-orphans
+          else
+            docker-compose up -d --build --remove-orphans
+          fi
           EOF

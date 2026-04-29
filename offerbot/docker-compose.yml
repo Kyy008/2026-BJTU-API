@@ -1,0 +1,16 @@
+services:
+  offerbot:
+    build:
+      context: .
+    container_name: offerbot
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8081:8081"
+    environment:
+      SERVER_PORT: "8081"
+      WECHAT_TOKEN: "${WECHAT_TOKEN}"
+      WECHAT_APP_ID: "${WECHAT_APP_ID:-}"
+      WECHAT_APP_SECRET: "${WECHAT_APP_SECRET:-}"
+      DB_URL: "${DB_URL:-jdbc:mysql://localhost:3306/offer_bot?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai}"
+      DB_USERNAME: "${DB_USERNAME:-root}"
+      DB_PASSWORD: "${DB_PASSWORD:-}"
