@@ -38,10 +38,11 @@ class CommandExecutorTests {
         long id = extractId(createReply);
 
         String queryReply = commandExecutor.execute("openid-1", "查Offer 关键词=字节 公司类型=互联网 岗位类型=实习 页码=1 每页=5");
-        assertThat(queryReply).contains("字节跳动").contains("后端实习");
+        assertThat(queryReply)
+                .contains("1. 公司：字节跳动｜城市：北京｜岗位：后端实习｜薪资：200/天 ｜ 学历要求：本科 ｜ 公司类型：互联网 ｜ 岗位类型：实习生");
 
         String detailReply = commandExecutor.execute("openid-1", "详情 编号=" + id);
-        assertThat(detailReply).contains("公司：字节跳动");
+        assertThat(detailReply).contains("公司：字节跳动").contains("公司类型：互联网").contains("岗位类型：实习生");
 
         String updateReply = commandExecutor.execute("openid-1", "更新 编号=" + id + " 薪资=250/天");
         assertThat(updateReply).contains("更新成功");

@@ -249,9 +249,9 @@ public class CommandExecutor {
                 城市：%s
                 岗位：%s
                 薪资：%s
-                学历：%s
-                行业：%s
-                类型：%s"""
+                学历要求：%s
+                公司类型：%s
+                岗位类型：%s"""
                 .formatted(
                         offer.getId(),
                         offer.getCompany(),
@@ -309,7 +309,15 @@ public class CommandExecutor {
     }
 
     private String oneLine(Offer offer) {
-        return offer.getCompany() + "｜" + offer.getCity() + "｜" + offer.getPosition() + "｜" + offer.getSalary();
+        return "公司：%s｜城市：%s｜岗位：%s｜薪资：%s ｜ 学历要求：%s ｜ 公司类型：%s ｜ 岗位类型：%s"
+                .formatted(
+                        offer.getCompany(),
+                        offer.getCity(),
+                        offer.getPosition(),
+                        offer.getSalary(),
+                        display(offer.getEducation()),
+                        display(offer.getIndustry()),
+                        displayType(offer.getType()));
     }
 
     private String display(String value) {
@@ -321,7 +329,7 @@ public class CommandExecutor {
             return "未知";
         }
         return switch (value) {
-            case "internship" -> "实习";
+            case "internship", "实习" -> "实习生";
             case "campus" -> "校招";
             case "fulltime" -> "社招";
             default -> value;
