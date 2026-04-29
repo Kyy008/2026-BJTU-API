@@ -58,6 +58,7 @@ jobs:
             offerbot/docker-compose.yml
             offerbot/.dockerignore
           if-no-files-found: error
+          include-hidden-files: true
 
   deploy:
     name: Deploy to server
