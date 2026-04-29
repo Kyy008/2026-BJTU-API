@@ -167,20 +167,68 @@ public class CommandExecutor {
     }
 
     private String help(String topic) {
-        if ("上传".equals(topic) || "create".equalsIgnoreCase(topic)) {
+        if ("1".equals(topic) || "查薪资".equals(topic) || "查询".equals(topic) || "query".equalsIgnoreCase(topic)) {
+            return """
+                    查薪资格式：
+                    查薪资 关键词=后端 城市=北京 页码=1 每页=5
+
+                    可选条件：
+                    关键词、公司、城市、岗位、行业、类型、页码、每页
+
+                    英文格式：
+                    offer query keyword=后端 city=北京 page=1 size=5""";
+        }
+        if ("2".equals(topic) || "找名企".equals(topic) || "famous".equalsIgnoreCase(topic)) {
+            return """
+                    找名企格式：
+                    找名企 城市=北京 岗位=后端 页码=1 每页=5
+
+                    可选条件：
+                    关键词、公司、城市、岗位、行业、类型、页码、每页
+
+                    英文格式：
+                    offer famous city=北京 position=后端 page=1 size=5""";
+        }
+        if ("3".equals(topic) || "上传".equals(topic) || "create".equalsIgnoreCase(topic)) {
             return """
                     上传格式：
                     上传 公司=字节跳动 城市=北京 岗位=后端实习 薪资=200/天 学历=本科 行业=互联网 类型=实习
 
+                    必填字段：
+                    公司、城市、岗位、薪资
+
+                    可选字段：
+                    学历、行业、类型
+
                     英文 key：
                     offer create company=字节跳动 city=北京 position=后端实习 salary=200/天""";
         }
-        if ("查询".equals(topic) || "query".equalsIgnoreCase(topic)) {
+        if ("4".equals(topic) || "详情".equals(topic) || "get".equalsIgnoreCase(topic)) {
             return """
-                    查询格式：
-                    查薪资 关键词=字节 页码=1 每页=5
-                    找名企 城市=北京 岗位=后端
-                    列表 页码=1 每页=5""";
+                    详情格式：
+                    详情 编号=1
+
+                    英文格式：
+                    offer get id=1""";
+        }
+        if ("5".equals(topic) || "更新".equals(topic) || "update".equalsIgnoreCase(topic)) {
+            return """
+                    更新格式：
+                    更新 编号=1 薪资=250/天 城市=北京
+
+                    说明：
+                    编号必填，其他字段按需填写，只修改你写出的字段。
+
+                    英文格式：
+                    offer update id=1 salary=250/天 city=北京""";
+        }
+        if ("6".equals(topic) || "删除".equals(topic) || "delete".equalsIgnoreCase(topic)) {
+            return """
+                    删除格式：
+                    删除 编号=1
+
+                    英文格式：
+                    offer delete id=1""";
         }
         return """
                 欢迎来到 008 的 OfferBot 小站喵～

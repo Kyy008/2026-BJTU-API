@@ -91,6 +91,19 @@ class CommandExecutorTests {
                 .contains("例如：帮助 2");
     }
 
+    @Test
+    void repliesWithDetailedHelpByNumber() {
+        assertThat(commandExecutor.execute("openid-help-detail", "帮助 1"))
+                .contains("查薪资格式")
+                .contains("offer query");
+        assertThat(commandExecutor.execute("openid-help-detail", "帮助 2"))
+                .contains("找名企格式")
+                .contains("offer famous");
+        assertThat(commandExecutor.execute("openid-help-detail", "帮助 上传"))
+                .contains("上传格式")
+                .contains("必填字段");
+    }
+
     private long extractId(String reply) {
         Matcher matcher = ID_PATTERN.matcher(reply);
         assertThat(matcher.find()).isTrue();
