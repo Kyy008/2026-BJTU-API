@@ -88,15 +88,15 @@ jobs:
 
       - name: Upload deployment bundle
         run: |
-          ssh "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}" 'mkdir -p /opt/offerbot'
-          scp dist/offerbot-0.0.1-SNAPSHOT.jar "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/opt/offerbot/offerbot.jar"
-          scp dist/deploy/Dockerfile dist/deploy/docker-compose.yml dist/deploy/.dockerignore "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/opt/offerbot/"
+          ssh "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}" 'mkdir -p "$HOME/offerbot"'
+          scp dist/offerbot-0.0.1-SNAPSHOT.jar "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/offerbot/offerbot.jar"
+          scp dist/deploy/Dockerfile dist/deploy/docker-compose.yml dist/deploy/.dockerignore "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:~/offerbot/"
 
       - name: Deploy offerbot container
         run: |
           ssh "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}" <<'EOF'
           set -e
-          cd /opt/offerbot
+          cd "$HOME/offerbot"
           cat > .env <<'ENVEOF'
           WECHAT_TOKEN=${{ secrets.WECHAT_TOKEN }}
           WECHAT_APP_ID=${{ secrets.WECHAT_APP_ID }}
