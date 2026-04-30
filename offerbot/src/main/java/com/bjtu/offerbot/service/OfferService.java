@@ -23,6 +23,7 @@ public class OfferService {
     private static final int DEFAULT_PAGE = 1;
     private static final int DEFAULT_SIZE = 5;
     private static final int MAX_SIZE = 10;
+    private static final String SALARY_PATTERN = "^\\d+/(天|月|年)$";
     private static final Set<String> FAMOUS_COMPANIES = Set.of(
             "字节跳动", "腾讯", "阿里巴巴", "美团", "京东", "百度", "网易", "快手", "小米", "华为");
 
@@ -221,6 +222,7 @@ public class OfferService {
         if (!missing.isEmpty()) {
             throw new BusinessException("缺少必填字段：" + String.join("、", missing));
         }
+        validateSalary(draft.salary());
     }
 
     private boolean applyPatch(Offer offer, Map<String, String> patch) {
@@ -261,7 +263,11 @@ public class OfferService {
         if (!hasRequiredValue(value)) {
             throw new BusinessException(toChineseField(key) + "是必填字段，不能使用 -。");
         }
-        return value.trim();
+        String trimmed = value.trim();
+        if ("salary".equals(key)) {
+            validateSalary(trimmed);
+        }
+        return trimmed;
     }
 
     private void applyDraft(Offer offer, OfferDraft draft) {
@@ -276,6 +282,12 @@ public class OfferService {
 
     private boolean hasRequiredValue(String value) {
         return StringUtils.hasText(value) && !"-".equals(value.trim());
+    }
+
+    private void validateSalary(String value) {
+        if (!StringUtils.hasText(value) || !value.trim().matches(SALARY_PATTERN)) {
+            throw new BusinessException("薪资格式错误，请使用 数字/天、数字/月 或 数字/年，例如：300/天。");
+        }
     }
 
     private String normalizeOptional(String value) {

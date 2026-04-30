@@ -44,7 +44,7 @@ class OfferServiceTests {
 
         Offer replaced = offerService.replaceOffer(
                 created.getId(),
-                new OfferDraft("腾讯", "深圳", "Java后端", "20k*15", "本科", "互联网", "校招"),
+                new OfferDraft("腾讯", "深圳", "Java后端", "20000/月", "本科", "互联网", "校招"),
                 "openid-1",
                 false);
         assertThat(replaced.getCompany()).isEqualTo("腾讯");
@@ -75,7 +75,7 @@ class OfferServiceTests {
     @Test
     void listsWithPaginationAndKeywordSearch() {
         offerService.createOffer(new OfferDraft("字节跳动", "北京", "后端实习", "200/天", "本科", "互联网", "实习"), "u1");
-        offerService.createOffer(new OfferDraft("腾讯", "深圳", "Java后端", "20k*15", "本科", "互联网", "校招"), "u1");
+        offerService.createOffer(new OfferDraft("腾讯", "深圳", "Java后端", "20000/月", "本科", "互联网", "校招"), "u1");
         offerService.createOffer(new OfferDraft("美团", "北京", "后端开发", "260/天", "本科", "生活服务", "实习"), "u1");
 
         PagedResult<Offer> firstPage = offerService.listOffers(OfferSearchCriteria.empty(), 1, 2);
@@ -120,7 +120,7 @@ class OfferServiceTests {
     void batchCreateSupportsDashForOptionalFields() {
         BatchCreateResult result = offerService.batchCreateOffers(List.of(
                 "字节跳动,北京,后端实习,200/天,本科,互联网,实习",
-                "某创业公司,杭州,前端开发,15k*14,-,-,校招"), "openid-1");
+                "某创业公司,杭州,前端开发,15000/月,-,-,校招"), "openid-1");
 
         assertThat(result.successCount()).isEqualTo(2);
         assertThat(result.failures()).isEmpty();
@@ -130,7 +130,7 @@ class OfferServiceTests {
     void batchCreateRejectsBadRowsAndRequiredDash() {
         BatchCreateResult result = offerService.batchCreateOffers(List.of(
                 "字节跳动,北京,后端实习,200/天,本科,互联网",
-                "腾讯,深圳,-,20k*15,本科,互联网,校招"), "openid-1");
+                "腾讯,深圳,-,20000/月,本科,互联网,校招"), "openid-1");
 
         assertThat(result.successCount()).isZero();
         assertThat(result.failures()).hasSize(2);
@@ -144,5 +144,19 @@ class OfferServiceTests {
                         new OfferDraft("-", "北京", "后端实习", "200/天", null, null, null), "openid-1"))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("公司");
+    }
+
+    @Test
+    void rejectsInvalidSalaryFormats() {
+        assertThatThrownBy(() -> offerService.createOffer(
+                        new OfferDraft("字节跳动", "北京", "后端实习", "20k-30k/月", null, null, null), "openid-1"))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("薪资格式错误");
+
+        Offer created = offerService.createOffer(
+                new OfferDraft("字节跳动", "北京", "后端实习", "300/天", null, null, null), "openid-1");
+        assertThatThrownBy(() -> offerService.updateOffer(created.getId(), Map.of("salary", "20k*15"), "openid-1", false))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("薪资格式错误");
     }
 }

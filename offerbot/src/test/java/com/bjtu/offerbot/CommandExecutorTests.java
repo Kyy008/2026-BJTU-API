@@ -54,7 +54,7 @@ class CommandExecutorTests {
 
         String replaceReply = commandExecutor.execute(
                 "openid-1",
-                "替换 编号=" + id + " 公司=腾讯 城市=深圳 岗位=Java后端 薪资=20k*15 学历=本科 公司类型=互联网 岗位类型=校招");
+                "替换 编号=" + id + " 公司=腾讯 城市=深圳 岗位=Java后端 薪资=20000/月 学历=本科 公司类型=互联网 岗位类型=校招");
         assertThat(replaceReply).contains("替换成功").contains("腾讯");
 
         String deleteReply = commandExecutor.execute("openid-1", "删除 编号=" + id);
@@ -66,7 +66,7 @@ class CommandExecutorTests {
         String reply = commandExecutor.execute("openid-2", """
                 批量上传
                 字节跳动,北京,后端实习,200/天,本科,互联网,实习
-                腾讯,深圳,-,20k*15,本科,互联网,校招
+                腾讯,深圳,-,20000/月,本科,互联网,校招
                 """);
 
         assertThat(reply).contains("批量上传完成").contains("成功：1 条").contains("失败：1 条");

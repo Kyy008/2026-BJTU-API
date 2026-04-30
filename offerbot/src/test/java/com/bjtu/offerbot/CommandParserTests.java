@@ -57,7 +57,7 @@ class CommandParserTests {
         ParsedCommand command = commandParser.parse("""
                 批量上传
                 字节跳动,北京,后端实习,200/天,本科,互联网,实习
-                腾讯,深圳,Java后端,20k*15,本科,互联网,校招
+                腾讯,深圳,Java后端,20000/月,本科,互联网,校招
                 """);
 
         assertThat(command.action()).isEqualTo(CommandAction.BATCH_CREATE);
