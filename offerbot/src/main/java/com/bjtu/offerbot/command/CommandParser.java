@@ -21,6 +21,7 @@ public class CommandParser {
         FIELD_ALIASES.put("岗位", "position");
         FIELD_ALIASES.put("薪资", "salary");
         FIELD_ALIASES.put("学历", "education");
+        FIELD_ALIASES.put("学历要求", "education");
         FIELD_ALIASES.put("行业", "industry");
         FIELD_ALIASES.put("公司类型", "industry");
         FIELD_ALIASES.put("类型", "type");

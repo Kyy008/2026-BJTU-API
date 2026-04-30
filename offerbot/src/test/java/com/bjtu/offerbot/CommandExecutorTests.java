@@ -38,7 +38,7 @@ class CommandExecutorTests {
     void executesCrudCommandsWithChineseForms() {
         String createReply = commandExecutor.execute(
                 "openid-1",
-                "上传 公司=字节跳动 城市=北京 岗位=后端实习 薪资=200/天 学历=本科 行业=互联网 类型=实习");
+                "上传 公司=字节跳动 城市=北京 岗位=后端实习 薪资=200/天 学历要求=本科 行业=互联网 类型=实习");
         assertThat(createReply).contains("上传成功").contains("编号：");
         long id = extractId(createReply);
 
@@ -54,7 +54,7 @@ class CommandExecutorTests {
 
         String replaceReply = commandExecutor.execute(
                 "openid-1",
-                "替换 编号=" + id + " 公司=腾讯 城市=深圳 岗位=Java后端 薪资=20000/月 学历=本科 公司类型=互联网 岗位类型=校招");
+                "替换 编号=" + id + " 公司=腾讯 城市=深圳 岗位=Java后端 薪资=20000/月 学历要求=本科 公司类型=互联网 岗位类型=校招");
         assertThat(replaceReply).contains("替换成功").contains("腾讯");
 
         String deleteReply = commandExecutor.execute("openid-1", "删除 编号=" + id);
@@ -93,7 +93,7 @@ class CommandExecutorTests {
     void preventsUsersFromMutatingOffersUploadedByOthers() {
         String createReply = commandExecutor.execute(
                 "owner-openid",
-                "上传 公司=字节跳动 城市=北京 岗位=后端实习 薪资=200/天 学历=本科 公司类型=互联网 岗位类型=实习");
+                "上传 公司=字节跳动 城市=北京 岗位=后端实习 薪资=200/天 学历要求=本科 公司类型=互联网 岗位类型=实习");
         long id = extractId(createReply);
 
         assertThat(commandExecutor.execute("other-openid", "更新 编号=" + id + " 薪资=250/天"))
@@ -128,17 +128,17 @@ class CommandExecutorTests {
                 .contains("示例：”查Offer 关键词=字节 岗位类型=实习“");
         assertThat(commandExecutor.execute("openid-help-detail", "帮助 2"))
                 .contains("上传格式")
-                .contains("“上传 公司= 城市= 岗位= 薪资= 学历= 公司类型= 岗位类型=“")
+                .contains("“上传 公司= 城市= 岗位= 薪资= 学历要求= 公司类型= 岗位类型=“")
                 .contains("公司、城市、岗位、薪资为必填")
-                .contains("示例：”上传 公司=字节跳动 城市=北京 岗位=后端开发实习生 薪资=300/天 岗位类型=实习“");
+                .contains("示例：”上传 公司=字节跳动 城市=北京 岗位=后端开发实习生 薪资=300/天 学历要求=本科 岗位类型=实习“");
         assertThat(commandExecutor.execute("openid-help-detail", "帮助 3"))
                 .contains("详情格式")
                 .contains("“详情 编号=“")
                 .contains("示例：”详情 编号=1“");
         assertThat(commandExecutor.execute("openid-help-detail", "帮助 4"))
                 .contains("更新格式")
-                .contains("“更新 编号= 公司= 城市= 岗位= 薪资= 学历= 公司类型= 岗位类型=“")
-                .contains("示例：”更新 编号=1 薪资=350/天 岗位类型=实习“");
+                .contains("“更新 编号= 公司= 城市= 岗位= 薪资= 学历要求= 公司类型= 岗位类型=“")
+                .contains("示例：”更新 编号=1 薪资=350/天 学历要求=本科 岗位类型=实习“");
         assertThat(commandExecutor.execute("openid-help-detail", "帮助 5"))
                 .contains("删除格式")
                 .contains("“删除 编号=“")

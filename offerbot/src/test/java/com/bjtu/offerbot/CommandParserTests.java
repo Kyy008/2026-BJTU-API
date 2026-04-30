@@ -15,14 +15,15 @@ class CommandParserTests {
 
     @Test
     void parsesChineseCreateCommand() {
-        ParsedCommand command = commandParser.parse("上传 公司=字节跳动 城市=北京 岗位=后端实习 薪资=200/天");
+        ParsedCommand command = commandParser.parse("上传 公司=字节跳动 城市=北京 岗位=后端实习 薪资=200/天 学历要求=本科");
 
         assertThat(command.action()).isEqualTo(CommandAction.CREATE);
         assertThat(command.params())
                 .containsEntry("company", "字节跳动")
                 .containsEntry("city", "北京")
                 .containsEntry("position", "后端实习")
-                .containsEntry("salary", "200/天");
+                .containsEntry("salary", "200/天")
+                .containsEntry("education", "本科");
     }
 
     @Test
