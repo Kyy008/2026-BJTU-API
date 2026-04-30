@@ -15,6 +15,8 @@ public class WxUserService {
     public static final String STATE_NORMAL = "NORMAL";
     public static final String STATE_SPIDER = "SPIDER";
     public static final String STATE_BANNED = "BANNED";
+    public static final String ROLE_ADMIN = "ADMIN";
+    public static final String ROLE_USER = "USER";
 
     private static final int REQUEST_LIMIT_SECONDS = 30;
     private static final int REQUEST_LIMIT_SIZE = 30;
@@ -37,7 +39,7 @@ public class WxUserService {
             user = new WxUser();
             user.setOpenid(openid);
             user.setState(STATE_NORMAL);
-            user.setRole("USER");
+            user.setRole(ROLE_USER);
             user.setRequestCount(1);
             user.setWindowStart(now);
             user.setCreatedAt(now);

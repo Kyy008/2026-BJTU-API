@@ -5,7 +5,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.bjtu.offerbot.command.CommandExecutor;
 import com.bjtu.offerbot.domain.CommandLog;
+import com.bjtu.offerbot.domain.WxUser;
 import com.bjtu.offerbot.mapper.CommandLogMapper;
+import com.bjtu.offerbot.mapper.WxUserMapper;
 import com.bjtu.offerbot.service.WxUserService;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -28,6 +30,9 @@ class CommandExecutorTests {
 
     @Autowired
     private CommandLogMapper commandLogMapper;
+
+    @Autowired
+    private WxUserMapper wxUserMapper;
 
     @Test
     void executesCrudCommandsWithChineseForms() {
@@ -82,6 +87,27 @@ class CommandExecutorTests {
         wxUserService.updateState("openid-3", WxUserService.STATE_BANNED);
         assertThat(commandExecutor.execute("openid-3", "上传 公司=字节跳动 城市=北京 岗位=后端实习 薪资=200/天"))
                 .contains("上传被拒绝");
+    }
+
+    @Test
+    void preventsUsersFromMutatingOffersUploadedByOthers() {
+        String createReply = commandExecutor.execute(
+                "owner-openid",
+                "上传 公司=字节跳动 城市=北京 岗位=后端实习 薪资=200/天 学历=本科 公司类型=互联网 岗位类型=实习");
+        long id = extractId(createReply);
+
+        assertThat(commandExecutor.execute("other-openid", "更新 编号=" + id + " 薪资=250/天"))
+                .contains("只能修改或删除自己上传的 Offer");
+        assertThat(commandExecutor.execute("other-openid", "删除 编号=" + id))
+                .contains("只能修改或删除自己上传的 Offer");
+
+        commandExecutor.execute("admin-openid", "帮助");
+        WxUser admin = wxUserService.findByOpenid("admin-openid");
+        admin.setRole(WxUserService.ROLE_ADMIN);
+        wxUserMapper.updateById(admin);
+
+        assertThat(commandExecutor.execute("admin-openid", "更新 编号=" + id + " 薪资=300/天"))
+                .contains("更新成功");
     }
 
     @Test

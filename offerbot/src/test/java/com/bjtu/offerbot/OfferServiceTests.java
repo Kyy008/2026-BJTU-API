@@ -38,18 +38,38 @@ class OfferServiceTests {
         assertThat(created.getId()).isNotNull();
         assertThat(offerService.getOffer(created.getId())).get().extracting(Offer::getCompany).isEqualTo("字节跳动");
 
-        Offer updated = offerService.updateOffer(created.getId(), Map.of("salary", "250/天", "city", "上海"));
+        Offer updated = offerService.updateOffer(created.getId(), Map.of("salary", "250/天", "city", "上海"), "openid-1", false);
         assertThat(updated.getSalary()).isEqualTo("250/天");
         assertThat(updated.getCity()).isEqualTo("上海");
 
         Offer replaced = offerService.replaceOffer(
                 created.getId(),
-                new OfferDraft("腾讯", "深圳", "Java后端", "20k*15", "本科", "互联网", "校招"));
+                new OfferDraft("腾讯", "深圳", "Java后端", "20k*15", "本科", "互联网", "校招"),
+                "openid-1",
+                false);
         assertThat(replaced.getCompany()).isEqualTo("腾讯");
         assertThat(replaced.getType()).isEqualTo("campus");
 
-        assertThat(offerService.deleteOffer(created.getId())).isTrue();
+        assertThat(offerService.deleteOffer(created.getId(), "openid-1", false)).isTrue();
         assertThat(offerService.getOffer(created.getId())).isEmpty();
+    }
+
+    @Test
+    void rejectsMutationByNonOwnerAndAllowsAdmin() {
+        Offer created = offerService.createOffer(
+                new OfferDraft("字节跳动", "北京", "后端实习", "200/天", "本科", "互联网", "实习"),
+                "owner-openid");
+
+        assertThatThrownBy(() -> offerService.updateOffer(created.getId(), Map.of("salary", "250/天"), "other-openid", false))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("只能修改或删除自己上传的 Offer");
+        assertThatThrownBy(() -> offerService.deleteOffer(created.getId(), "other-openid", false))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("只能修改或删除自己上传的 Offer");
+
+        Offer adminUpdated = offerService.updateOffer(created.getId(), Map.of("salary", "300/天"), "admin-openid", true);
+        assertThat(adminUpdated.getSalary()).isEqualTo("300/天");
+        assertThat(offerService.deleteOffer(created.getId(), "admin-openid", true)).isTrue();
     }
 
     @Test

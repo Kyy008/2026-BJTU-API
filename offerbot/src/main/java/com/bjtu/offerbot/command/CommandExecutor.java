@@ -42,7 +42,7 @@ public class CommandExecutor {
             WxUser user = wxUserService.recordRequest(openid);
             parsedCommand = commandParser.parse(rawCommand);
             checkPermission(user, parsedCommand.action());
-            result = executeParsed(openid, parsedCommand);
+            result = executeParsed(openid, user, parsedCommand);
             return result;
         } catch (BusinessException e) {
             error = e.getMessage();
@@ -61,7 +61,7 @@ public class CommandExecutor {
         }
     }
 
-    private String executeParsed(String openid, ParsedCommand command) {
+    private String executeParsed(String openid, WxUser user, ParsedCommand command) {
         return switch (command.action()) {
             case HELP -> help(command.helpTopic());
             case CREATE -> formatCreated(offerService.createOffer(toDraft(command.params()), openid));
@@ -70,9 +70,17 @@ public class CommandExecutor {
             case LIST -> formatPage(offerService.listOffers(OfferSearchCriteria.empty(), parseInt(command.params(), "page"), parseInt(command.params(), "size")), "列表");
             case QUERY -> formatPage(offerService.listOffers(toCriteria(command.params(), false), parseInt(command.params(), "page"), parseInt(command.params(), "size")), "查Offer");
             case FAMOUS_QUERY -> formatPage(offerService.listOffers(toCriteria(command.params(), true), parseInt(command.params(), "page"), parseInt(command.params(), "size")), "找名企");
-            case UPDATE -> formatUpdated(offerService.updateOffer(parseRequiredLong(command.params(), "id", "编号"), updatePatch(command.params())));
-            case REPLACE -> formatReplaced(offerService.replaceOffer(parseRequiredLong(command.params(), "id", "编号"), toDraft(command.params())));
-            case DELETE -> formatDeleted(parseAndDelete(command.params()));
+            case UPDATE -> formatUpdated(offerService.updateOffer(
+                    parseRequiredLong(command.params(), "id", "编号"),
+                    updatePatch(command.params()),
+                    openid,
+                    isAdmin(user)));
+            case REPLACE -> formatReplaced(offerService.replaceOffer(
+                    parseRequiredLong(command.params(), "id", "编号"),
+                    toDraft(command.params()),
+                    openid,
+                    isAdmin(user)));
+            case DELETE -> formatDeleted(parseAndDelete(command.params(), openid, isAdmin(user)));
             case BATCH_CREATE -> formatBatch(offerService.batchCreateOffers(command.batchRows(), openid));
         };
     }
@@ -99,6 +107,10 @@ public class CommandExecutor {
                 || action == CommandAction.REPLACE
                 || action == CommandAction.DELETE
                 || action == CommandAction.BATCH_CREATE;
+    }
+
+    private boolean isAdmin(WxUser user) {
+        return user != null && WxUserService.ROLE_ADMIN.equals(user.getRole());
     }
 
     private OfferDraft toDraft(Map<String, String> params) {
@@ -132,9 +144,9 @@ public class CommandExecutor {
         return patch;
     }
 
-    private Long parseAndDelete(Map<String, String> params) {
+    private Long parseAndDelete(Map<String, String> params, String openid, boolean admin) {
         Long id = parseRequiredLong(params, "id", "编号");
-        offerService.deleteOffer(id);
+        offerService.deleteOffer(id, openid, admin);
         return id;
     }
 

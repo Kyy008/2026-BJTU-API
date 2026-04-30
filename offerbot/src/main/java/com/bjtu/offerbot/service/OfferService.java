@@ -71,8 +71,9 @@ public class OfferService {
     }
 
     @Transactional
-    public Offer updateOffer(Long id, Map<String, String> patch) {
+    public Offer updateOffer(Long id, Map<String, String> patch, String actorOpenid, boolean admin) {
         Offer offer = getOffer(id).orElseThrow(() -> new BusinessException("没有找到编号=" + id + " 的记录。"));
+        checkOwnerPermission(offer, actorOpenid, admin);
         if (patch == null || patch.isEmpty()) {
             throw new BusinessException("请提供至少一个要更新的字段。");
         }
@@ -88,8 +89,9 @@ public class OfferService {
     }
 
     @Transactional
-    public Offer replaceOffer(Long id, OfferDraft draft) {
+    public Offer replaceOffer(Long id, OfferDraft draft, String actorOpenid, boolean admin) {
         Offer offer = getOffer(id).orElseThrow(() -> new BusinessException("没有找到编号=" + id + " 的记录。"));
+        checkOwnerPermission(offer, actorOpenid, admin);
         validateDraft(draft);
         applyDraft(offer, draft);
         offer.setUpdatedAt(LocalDateTime.now());
@@ -98,8 +100,9 @@ public class OfferService {
     }
 
     @Transactional
-    public boolean deleteOffer(Long id) {
-        getOffer(id).orElseThrow(() -> new BusinessException("没有找到编号=" + id + " 的记录。"));
+    public boolean deleteOffer(Long id, String actorOpenid, boolean admin) {
+        Offer offer = getOffer(id).orElseThrow(() -> new BusinessException("没有找到编号=" + id + " 的记录。"));
+        checkOwnerPermission(offer, actorOpenid, admin);
         return offerMapper.deleteById(id) > 0;
     }
 
@@ -230,6 +233,18 @@ public class OfferService {
         changed |= applyIfPresent(patch, "industry", offer::setIndustry, false);
         changed |= applyIfPresent(patch, "type", offer::setType, false);
         return changed;
+    }
+
+    private void checkOwnerPermission(Offer offer, String actorOpenid, boolean admin) {
+        if (admin) {
+            return;
+        }
+        if (!StringUtils.hasText(actorOpenid)) {
+            throw new BusinessException("缺少微信用户 openid。");
+        }
+        if (!actorOpenid.equals(offer.getSourceOpenid())) {
+            throw new BusinessException("只能修改或删除自己上传的 Offer。");
+        }
     }
 
     private boolean applyIfPresent(
