@@ -34,6 +34,9 @@ public class CommandExecutor {
         this.commandLogService = commandLogService;
     }
 
+    /**
+     * 公众号只需要一段回复文本，因此业务异常也会转成用户可读消息并记录日志。
+     */
     public String execute(String openid, String rawCommand) {
         ParsedCommand parsedCommand = null;
         String result = null;
@@ -86,6 +89,7 @@ public class CommandExecutor {
     }
 
     private void checkPermission(WxUser user, CommandAction action) {
+        // 爬虫状态只限制读操作；封禁状态只限制写操作，便于演示两类权限控制。
         if (WxUserService.STATE_SPIDER.equals(user.getState()) && isQueryAction(action)) {
             throw new BusinessException("访问被限制：检测到短时间内请求过于频繁。\n当前不能查询 Offer 信息，请稍后联系管理员处理。");
         }
@@ -137,6 +141,7 @@ public class CommandExecutor {
 
     private Map<String, String> updatePatch(Map<String, String> params) {
         Map<String, String> patch = new LinkedHashMap<>(params);
+        // 这些字段只参与定位或分页，不应被当作 Offer 字段写回数据库。
         patch.remove("id");
         patch.remove("keyword");
         patch.remove("page");

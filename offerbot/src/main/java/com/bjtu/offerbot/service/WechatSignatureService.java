@@ -17,6 +17,9 @@ public class WechatSignatureService {
         this.wechatProperties = wechatProperties;
     }
 
+    /**
+     * 按微信公众号接入规则校验 signature：token、timestamp、nonce 排序后做 SHA-1。
+     */
     public boolean isValid(String signature, String timestamp, String nonce) {
         if (!StringUtils.hasText(signature)
                 || !StringUtils.hasText(timestamp)
@@ -28,6 +31,9 @@ public class WechatSignatureService {
         return signature.equals(sha1Sorted(wechatProperties.getToken(), timestamp, nonce));
     }
 
+    /**
+     * 保持 public，便于单元测试直接覆盖微信签名算法。
+     */
     public String sha1Sorted(String token, String timestamp, String nonce) {
         String[] parts = {token, timestamp, nonce};
         Arrays.sort(parts);

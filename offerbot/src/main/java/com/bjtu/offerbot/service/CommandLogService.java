@@ -15,6 +15,9 @@ public class CommandLogService {
         this.commandLogMapper = commandLogMapper;
     }
 
+    /**
+     * 命令日志覆盖成功和失败两种路径，用于演示审计和排查用户输入问题。
+     */
     @Transactional
     public void log(String openid, String rawCommand, String action, String status, String resultText, String errorMessage) {
         CommandLog commandLog = new CommandLog();

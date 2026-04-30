@@ -12,6 +12,9 @@ import org.springframework.util.StringUtils;
 @Component
 public class CommandParser {
 
+    /**
+     * 用户只输入中文字段，解析后统一映射成业务层字段名。
+     */
     private static final Map<String, String> FIELD_ALIASES = new HashMap<>();
 
     static {
@@ -31,6 +34,9 @@ public class CommandParser {
         FIELD_ALIASES.put("每页", "size");
     }
 
+    /**
+     * 命令格式约定为：命令名 + 空格 + 若干“字段=值”；批量上传单独走多行解析。
+     */
     public ParsedCommand parse(String rawCommand) {
         if (!StringUtils.hasText(rawCommand)) {
             throw new BusinessException("暂时看不懂这条命令。\n发送“帮助”查看可用命令。");
@@ -108,6 +114,7 @@ public class CommandParser {
                 afterHeader = line.equals(firstLine);
                 continue;
             }
+            // 第一行是“批量上传”命令本身，后续非空行才是待导入数据。
             if (StringUtils.hasText(line)) {
                 rows.add(line);
             }

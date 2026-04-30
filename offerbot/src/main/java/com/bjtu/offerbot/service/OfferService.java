@@ -63,6 +63,7 @@ public class OfferService {
         LambdaQueryWrapper<Offer> wrapper = buildQuery(criteria == null ? OfferSearchCriteria.empty() : criteria);
         wrapper.orderByAsc(Offer::getId);
 
+        // 当前数据量较小，先查询匹配结果再在内存中切页，便于保持分页逻辑可读。
         List<Offer> allRecords = offerMapper.selectList(wrapper);
         int total = allRecords.size();
         int totalPages = total == 0 ? 0 : (int) Math.ceil(total / (double) normalizedSize);
@@ -123,6 +124,7 @@ public class OfferService {
                 createOffer(draft, sourceOpenid);
                 successCount++;
             } catch (BusinessException e) {
+                // 批量上传允许部分成功，错误行汇总给用户修正后重传。
                 failures.add("第 " + lineNumber + " 行失败：" + e.getMessage());
             }
         }
@@ -133,6 +135,7 @@ public class OfferService {
         LambdaQueryWrapper<Offer> wrapper = new LambdaQueryWrapper<>();
         if (StringUtils.hasText(criteria.keyword())) {
             String keyword = criteria.keyword().trim();
+            // 关键词用于模拟 OfferShow 的组合搜索体验，覆盖用户最常输入的展示字段。
             wrapper.and(w -> w.like(Offer::getCompany, keyword)
                     .or()
                     .like(Offer::getCity, keyword)
@@ -160,6 +163,7 @@ public class OfferService {
         if (StringUtils.hasText(criteria.type())) {
             String rawType = criteria.type().trim();
             String normalizedType = normalizeOptional(rawType);
+            // 岗位类型既可能是中文输入，也可能已经是内部规范值，两种都兼容。
             wrapper.and(w -> w.eq(Offer::getType, normalizedType).or().eq(Offer::getType, rawType));
         }
         if (criteria.famousOnly()) {
@@ -295,6 +299,7 @@ public class OfferService {
             return null;
         }
         String trimmed = value.trim();
+        // 可选字段用 null 表示未知；常见岗位类型统一成稳定的内部值，方便查询。
         return switch (trimmed) {
             case "实习" -> "internship";
             case "校招" -> "campus";

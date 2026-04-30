@@ -27,6 +27,9 @@ public class WxUserService {
         this.wxUserMapper = wxUserMapper;
     }
 
+    /**
+     * 每次微信命令都会刷新用户请求窗口，并在高频访问时自动标记为 SPIDER。
+     */
     @Transactional
     public WxUser recordRequest(String openid) {
         if (!StringUtils.hasText(openid)) {
@@ -55,6 +58,7 @@ public class WxUserService {
         } else {
             int requestCount = user.getRequestCount() == null ? 0 : user.getRequestCount();
             user.setRequestCount(requestCount + 1);
+            // 只自动从 NORMAL 标记为 SPIDER，避免覆盖管理员手动设置的 BANNED 等状态。
             if (user.getRequestCount() > REQUEST_LIMIT_SIZE && STATE_NORMAL.equals(user.getState())) {
                 user.setState(STATE_SPIDER);
                 user.setBannedReason("30 秒内请求超过 30 次");

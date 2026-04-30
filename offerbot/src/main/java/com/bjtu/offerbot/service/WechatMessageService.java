@@ -18,6 +18,9 @@ public class WechatMessageService {
         this.commandExecutor = commandExecutor;
     }
 
+    /**
+     * 解析微信 XML、执行业务命令，并重新封装为微信要求的 XML 文本消息。
+     */
     public String reply(String requestBody) {
         WechatInboundMessage message = parse(requestBody);
         String replyContent = buildReplyContent(message);
@@ -42,6 +45,7 @@ public class WechatMessageService {
     private WechatInboundMessage parse(String requestBody) {
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            // 微信消息来自外部 XML 输入，关闭 DTD 和外部实体以避免 XXE 风险。
             factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
             factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
             factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
@@ -90,6 +94,7 @@ public class WechatMessageService {
     }
 
     private String cdataSafe(String value) {
+        // 微信回复字段用 CDATA 包裹，这里拆开非法的 CDATA 结束符，避免生成畸形 XML。
         return value == null ? "" : value.replace("]]>", "]]]]><![CDATA[>");
     }
 
